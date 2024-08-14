@@ -17,6 +17,9 @@ function Skyscraper() {
     // Create the scene
     const scene = new THREE.Scene();
 
+    // Set the background color or texture
+    scene.background = new THREE.Color(settings.scene.backgroundColor);
+
     // Create the camera
     const camera = new THREE.PerspectiveCamera(
       settings.camera.fov,
@@ -33,6 +36,7 @@ function Skyscraper() {
     // Create the renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true; // Enable shadows
     mountRef.current.appendChild(renderer.domElement);
 
     // Add lighting to the scene
@@ -47,6 +51,7 @@ function Skyscraper() {
       settings.lighting.directional.position.y,
       settings.lighting.directional.position.z
     );
+    directionalLight.castShadow = true; // Enable shadow casting
     scene.add(directionalLight);
 
     // Create building blocks (parallelepipeds) with a grey material
@@ -70,16 +75,26 @@ function Skyscraper() {
           (j < 2 ? -1 : 1) * settings.building.block.spacing.z;
         box.position.y = i * settings.building.block.spacing.y;
         box.userData = { apartmentNumber: i * 4 + j + 1 }; // Assign an apartment number
+        box.castShadow = true; // Enable shadow casting
         building.add(box);
       }
     }
     scene.add(building);
 
+    // Add a ground plane
+    const planeGeometry = new THREE.PlaneGeometry(500, 500);
+    const planeMaterial = new THREE.ShadowMaterial({ opacity: 0.5 });
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.rotation.x = -Math.PI / 2;
+    plane.position.y = -0.3;
+    plane.receiveShadow = true; // Enable shadow receiving
+    scene.add(plane);
+
     // Calculate the center of the building
     const buildingHeight = settings.building.height * settings.building.block.spacing.y; // Total height of the building
     const buildingCenter = new THREE.Vector3(0, buildingHeight / 2, 0); // Center point of the building
 
-    // Variables for mouse controls
+    // Variables for mouse and touch controls
     let isMouseDown = false;
     let mouseX = 0;
     let mouseY = 0;
@@ -209,6 +224,60 @@ function Skyscraper() {
       }
     }
 
+    // Touch events for mobile
+    function onTouchStart(event) {
+      if (!isPopupVisibleRef.current) {
+        if (event.touches.length === 1) { // One finger touch
+          isMouseDown = true;
+          mouseX = event.touches[0].clientX;
+          mouseY = event.touches[0].clientY;
+  
+          // Detect touch on apartment
+          mouse.x = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
+          mouse.y = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
+  
+          raycaster.setFromCamera(mouse, camera);
+          const intersects = raycaster.intersectObjects(building.children);
+  
+          if (intersects.length > 0) {
+            const selected = intersects[0].object;
+            resetPrevSelectedBoxColor();
+            selectedBoxRef.current = selected.userData.apartmentNumber; // Update ref with selected apartment number
+            setSelectedBox(selected.userData.apartmentNumber); // Update state with selected apartment number
+            setPopupVisible(true); // Show pop-up window
+            isPopupVisibleRef.current = true; // Set popup visibility ref to true
+            selected.material.color.set(settings.building.block.selectColor); // Highlight the selected apartment in select color
+          }
+        }
+      }
+    }
+
+    function onTouchMove(event) {
+      if (isMouseDown && event.touches.length === 1) {
+        const deltaX = event.touches[0].clientX - mouseX;
+        const deltaY = event.touches[0].clientY - mouseY;
+  
+        // Update theta and phi based on touch movement
+        thetaRef.current -= deltaX * settings.cameraControls.thetaSensitivity;
+        phiRef.current = Math.max(
+          settings.cameraControls.phiClamp.min,
+          Math.min(
+            settings.cameraControls.phiClamp.max,
+            phiRef.current - deltaY * settings.cameraControls.phiSensitivity
+          )
+        );
+  
+        updateCameraPosition();
+  
+        mouseX = event.touches[0].clientX;
+        mouseY = event.touches[0].clientY;
+      }
+    }
+
+    function onTouchEnd() {
+      isMouseDown = false;
+    }
+
     // Function to handle window resize event
     function onWindowResize() {
       camera.aspect = window.innerWidth / window.innerHeight;
@@ -216,11 +285,14 @@ function Skyscraper() {
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    // Add event listeners
+    // Add event listeners for mouse and touch
     window.addEventListener("mousedown", onMouseDown, false);
     window.addEventListener("mousemove", onMouseMove, false);
     window.addEventListener("mouseup", onMouseUp, false);
     window.addEventListener("resize", onWindowResize, false);
+    window.addEventListener("touchstart", onTouchStart, false);
+    window.addEventListener("touchmove", onTouchMove, false);
+    window.addEventListener("touchend", onTouchEnd, false);
 
     // Render loop
     const animate = function () {
@@ -235,6 +307,9 @@ function Skyscraper() {
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
       window.removeEventListener("resize", onWindowResize);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
       mountRef.current.removeChild(renderer.domElement);
     };
   }, []); // Empty dependency array to avoid re-running the effect

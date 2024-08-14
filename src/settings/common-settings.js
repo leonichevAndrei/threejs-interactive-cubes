@@ -8,11 +8,11 @@ export default {
   },
   lighting: {
     ambient: {
-      color: 0x404040, // Soft white light
+      color: 0xf0f0f0, // Soft white light
     },
     directional: {
-      color: 0xffffff,
-      intensity: 0.5,
+      color: 0xf0f0f0,
+      intensity: 1,
       position: { x: 5, y: 10, z: 7.5 },
     },
   },
@@ -20,11 +20,14 @@ export default {
     block: {
       geometry: { width: 2, height: 0.5, depth: 2 },
       spacing: { x: 1.1, y: 0.6, z: 1.1 },
-      defaultColor: 0x808080 , // Default grey color
+      defaultColor: 0xf0f0f0 , // Default grey color
       highlightColor: 0x00ff00, // Green color for highlighting
       selectColor: 0x00ffff, // Green color for highlighting
     },
     height: 10, // Number of floors
+  },
+  scene: {
+    backgroundColor: 0xf0f0f0, // Light grey background color
   },
   cameraControls: {
     radius: 10, // Distance from the camera to the center of the building
