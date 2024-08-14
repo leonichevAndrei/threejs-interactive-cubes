@@ -1,6 +1,6 @@
 import React from 'react';
-import Skyscraper from './Skyscraper';
-import './App.css';
+import Skyscraper from './components/Skyscraper';
+import './styles/app.css';
 
 function App() {
   return (
