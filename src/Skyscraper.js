@@ -1,15 +1,12 @@
-import { hover } from "@testing-library/user-event/dist/hover";
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect } from "react";
 import * as THREE from "three";
 
 function Skyscraper() {
   const mountRef = useRef(null);
-
-  // State to track the selected apartment and camera angles
-  const [selectedBox, setSelectedBox] = useState(null);
-  const [hoveredBox, setHoveredBox] = useState(null);
-  const [theta, setTheta] = useState(45); // Horizontal angle
-  const [phi, setPhi] = useState(Math.PI / 3); // Vertical angle
+  const selectedBoxRef = useRef(null);
+  const hoveredBoxRef = useRef(null);
+  const thetaRef = useRef(45); // Horizontal angle
+  const phiRef = useRef(Math.PI / 3); // Vertical angle
 
   useEffect(() => {
     // Create the scene
@@ -48,7 +45,7 @@ function Skyscraper() {
     }
     scene.add(building);
 
-    // Calculate the center of the building (assuming the center is at the height of half of the building)
+    // Calculate the center of the building
     const buildingHeight = 10 * 0.6; // Total height of the building
     const buildingCenter = new THREE.Vector3(0, buildingHeight / 2, 0); // Center point of the building
 
@@ -56,8 +53,6 @@ function Skyscraper() {
     let isMouseDown = false;
     let mouseX = 0;
     let mouseY = 0;
-    let currentTheta = theta;
-    let currentPhi = phi;
     const radius = 10; // Distance from the camera to the center of the building
 
     // Variables for detecting clicks and hover
@@ -66,13 +61,15 @@ function Skyscraper() {
 
     // Function to update the camera's position based on theta and phi
     function updateCameraPosition() {
+      const theta = thetaRef.current;
+      const phi = phiRef.current;
       camera.position.x =
         buildingCenter.x +
-        radius * Math.sin(currentPhi) * Math.sin(currentTheta);
-      camera.position.y = buildingCenter.y + radius * Math.cos(currentPhi);
+        radius * Math.sin(phi) * Math.sin(theta);
+      camera.position.y = buildingCenter.y + radius * Math.cos(phi);
       camera.position.z =
         buildingCenter.z +
-        radius * Math.sin(currentPhi) * Math.cos(currentTheta);
+        radius * Math.sin(phi) * Math.cos(theta);
       camera.lookAt(buildingCenter); // Keep looking at the center of the building
     }
 
@@ -80,9 +77,9 @@ function Skyscraper() {
     updateCameraPosition();
 
     // Apply the hovered box if it exists
-    if (hoveredBox != null) {
+    if (hoveredBoxRef.current != null) {
       building.children.forEach((box) => {
-        if (box.userData.apartmentNumber === hoveredBox) {
+        if (box.userData.apartmentNumber === hoveredBoxRef.current) {
           box.material.color.set(0x00ff00); // Highlight hovered apartment in green
         }
       });
@@ -104,7 +101,7 @@ function Skyscraper() {
       if (intersects.length > 0) {
         const selected = intersects[0].object;
 
-        setSelectedBox(selected.userData.apartmentNumber); // Update state with selected apartment number
+        selectedBoxRef.current = selected.userData.apartmentNumber; // Update ref with selected apartment number
 
         // Set color for the selected apartment
         building.children.forEach((box) => {
@@ -115,6 +112,17 @@ function Skyscraper() {
       }
     }
 
+    // Function to reset previous hovered apartment to grey
+    function resetPrevHoveredBoxColor() {
+      if (hoveredBoxRef.current !== null) {
+        building.children.forEach((box) => {
+          if (box.userData.apartmentNumber === hoveredBoxRef.current) {
+            box.material.color.set(0x808080);
+          }
+        });
+      }
+    }
+
     // Function to handle mouse move event (for rotating and hover effects)
     function onMouseMove(event) {
       if (isMouseDown) {
@@ -122,10 +130,10 @@ function Skyscraper() {
         const deltaY = event.clientY - mouseY;
 
         // Update theta and phi based on mouse movement, invert directions to match expected behavior
-        currentTheta -= deltaX * 0.01; // Inverted to match expected direction
-        currentPhi = Math.max(
+        thetaRef.current -= deltaX * 0.01; // Inverted to match expected direction
+        phiRef.current = Math.max(
           0.8,
-          Math.min(Math.PI - 1.4, currentPhi - deltaY * 0.005)
+          Math.min(Math.PI - 1.4, phiRef.current - deltaY * 0.005)
         ); // Inverted and clamped to match expected direction
 
         updateCameraPosition();
@@ -143,31 +151,13 @@ function Skyscraper() {
         if (intersects.length > 0) {
           const hovered = intersects[0].object;
 
-          console.log(hovered.userData.apartmentNumber + " / " + hoveredBox);
-          if (hovered.userData.apartmentNumber !== hoveredBox) {
-            console.log("NOT EQUAL STATE");
-            // Ensure the selected apartment is not affected by hover
-            if (hoveredBox !== hovered.userData.apartmentNumber) {
-              hovered.material.color.set(0x00ff00); // Highlight hovered apartment in green
-              setHoveredBox(hovered.userData.apartmentNumber);
-            }
-
-          } else {
-            console.log("EQUAL STATE");
-            // building.children.forEach((box) => {
-            //   if (box.userData.apartmentNumber === hoveredBox) {
-            //     box.material.color.set(0x808080); // Reset color when not hovered
-            //   }
-            // });
+          if (hovered.userData.apartmentNumber !== hoveredBoxRef.current) {
+            resetPrevHoveredBoxColor();
+            hovered.material.color.set(0x00ff00); // Highlight hovered apartment in green
+            hoveredBoxRef.current = hovered.userData.apartmentNumber;
           }
-
-
         } else {
-          // building.children.forEach((box) => {
-          //   if (box.userData.apartmentNumber !== selectedBox) {
-          //     box.material.color.set(0x808080); // Reset color when not hovered
-          //   }
-          // });
+          resetPrevHoveredBoxColor();
         }
       }
     }
@@ -175,9 +165,6 @@ function Skyscraper() {
     // Function to handle mouse up event
     function onMouseUp() {
       isMouseDown = false;
-      // Update the state with the final theta and phi values
-      setTheta(currentTheta);
-      setPhi(currentPhi);
     }
 
     // Function to handle window resize event
@@ -208,12 +195,12 @@ function Skyscraper() {
       window.removeEventListener("resize", onWindowResize);
       mountRef.current.removeChild(renderer.domElement);
     };
-  }, [theta, phi, selectedBox, hoveredBox]); // Re-run effect if theta, phi, selectedBox or hoveredBox changes
+  }, []); // Empty dependency array to avoid re-running the effect
 
   return (
     <div>
       <div ref={mountRef} style={{ position: "relative" }}></div>
-      {selectedBox && (
+      {selectedBoxRef.current && (
         <div
           style={{
             position: "absolute",
@@ -225,7 +212,7 @@ function Skyscraper() {
             borderRadius: "5px",
           }}
         >
-          You selected apartment number {selectedBox}
+          You selected apartment number {selectedBoxRef.current}
         </div>
       )}
     </div>
