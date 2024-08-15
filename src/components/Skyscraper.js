@@ -95,7 +95,7 @@ function Skyscraper() {
     const buildingCenter = new THREE.Vector3(0, buildingHeight / 2, 0); // Center point of the building
 
     // Variables for mouse and touch controls
-    let isMouseDown = false;
+    let isMouseOrTouchDown = false;
     let mouseX = 0;
     let mouseY = 0;
     const radius = settings.cameraControls.radius; // Distance from the camera to the center of the building
@@ -150,100 +150,72 @@ function Skyscraper() {
       }
     }
 
-    // Function to handle mouse down event
-    function onMouseDown(event) {
-      if (!isPopupVisibleRef.current) {
-        isMouseDown = true;
-        mouseX = event.clientX;
-        mouseY = event.clientY;
-  
-        // Detect click on apartment
-        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  
-        raycaster.setFromCamera(mouse, camera);
-        const intersects = raycaster.intersectObjects(building.children);
-  
-        if (intersects.length > 0) {
-          const selected = intersects[0].object;
-          resetPrevSelectedBoxColor();
-          selectedBoxRef.current = selected.userData.apartmentNumber; // Update ref with selected apartment number
-          setSelectedBox(selected.userData.apartmentNumber) // Update state with selected apartment number
-          setPopupVisible(true); // Show pop-up window
-          isPopupVisibleRef.current = true; // Set popup visibility ref to true
-          selected.material.color.set(settings.building.block.selectColor); // Highlight the selected apartment in select color
-        }
+    // Function to set selected apartment to specific colour
+    function setSelectedBoxColor() {
+      if (selectedBoxRef.current !== null) {
+        building.children.forEach((box) => {
+          if (box.userData.apartmentNumber === selectedBoxRef.current) {
+            box.material.color.set(settings.building.block.selectColor);
+          }
+        });
       }
     }
 
-    // Function to handle mouse up event
-    function onMouseUp() {
-      isMouseDown = false;
-    }
+    const isTouchScreen = window.matchMedia('(pointer: coarse)').matches;
 
-    // Function to handle mouse move event (for rotating and hover effects)
-    function onMouseMove(event) {
-      if (!isPopupVisibleRef.current) {
-        if (isMouseDown) {
-          const deltaX = event.clientX - mouseX;
-          const deltaY = event.clientY - mouseY;
-  
-          // Update theta and phi based on mouse movement, invert directions to match expected behavior
-          thetaRef.current -= deltaX * settings.cameraControls.thetaSensitivity; // Inverted to match expected direction
-          phiRef.current = Math.max(
-            settings.cameraControls.phiClamp.min,
-            Math.min(
-              settings.cameraControls.phiClamp.max,
-              phiRef.current - deltaY * settings.cameraControls.phiSensitivity
-            )
-          ); // Inverted and clamped to match expected direction
-  
-          updateCameraPosition();
-  
-          mouseX = event.clientX;
-          mouseY = event.clientY;
-        } else {
-          // Handle hover effect
-          mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-          mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-  
-          raycaster.setFromCamera(mouse, camera);
-          const intersects = raycaster.intersectObjects(building.children);
-  
-          if (intersects.length > 0) {
-            const hovered = intersects[0].object;
-            resetPrevHoveredBoxColor();
-            hoveredBoxRef.current = hovered.userData.apartmentNumber;
-            if (hovered.userData.apartmentNumber !== selectedBoxRef.current) {
-              hovered.material.color.set(settings.building.block.highlightColor); // Highlight hovered apartment in green
+    // Function to handle mouse down or touch start event
+    function onMouseDownOrTouchStart(event) {
+      event.stopPropagation();
+      if (isTouchScreen && event.type == 'touchstart') {
+        // For touchscreens
+        if (!isPopupVisibleRef.current) {
+          if (event.touches.length === 1) { // One finger touch
+            isMouseOrTouchDown = true;
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+    
+            // Detect touch on apartment
+            mouse.x = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
+    
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(building.children);
+    
+            if (intersects.length > 0) {
+              const selected = intersects[0].object;
+              resetPrevSelectedBoxColor();
+              selectedBoxRef.current = selected.userData.apartmentNumber; // Update ref with selected apartment number
+              setSelectedBox(selected.userData.apartmentNumber); // Update state with selected apartment number
+              // setPopupVisible(true); // Show pop-up window
+              // isPopupVisibleRef.current = true; // Set popup visibility ref to true
+              // selected.material.color.set(settings.building.block.selectColor); // Highlight the selected apartment in select color
             }
-          } else {
-            resetPrevHoveredBoxColor();
           }
         }
-      }
-    }
-
-    // Touch events for mobile
-    function onTouchStart(event) {
-      if (!isPopupVisibleRef.current) {
-        if (event.touches.length === 1) { // One finger touch
-          isMouseDown = true;
-          mouseX = event.touches[0].clientX;
-          mouseY = event.touches[0].clientY;
-  
-          // Detect touch on apartment
-          mouse.x = (event.touches[0].clientX / window.innerWidth) * 2 - 1;
-          mouse.y = -(event.touches[0].clientY / window.innerHeight) * 2 + 1;
-  
+      } else if (isTouchScreen && event.type == 'mousedown') {
+        // Auto click after touch end on touchpad
+        setSelectedBoxColor();
+        setPopupVisible(true); 
+        isPopupVisibleRef.current = true;
+      } else if (!isTouchScreen) {
+        // For mouse
+        if (!isPopupVisibleRef.current) {
+          isMouseOrTouchDown = true;
+          mouseX = event.clientX;
+          mouseY = event.clientY;
+    
+          // Detect click on apartment
+          mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+          mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    
           raycaster.setFromCamera(mouse, camera);
           const intersects = raycaster.intersectObjects(building.children);
-  
+    
           if (intersects.length > 0) {
             const selected = intersects[0].object;
             resetPrevSelectedBoxColor();
             selectedBoxRef.current = selected.userData.apartmentNumber; // Update ref with selected apartment number
-            setSelectedBox(selected.userData.apartmentNumber); // Update state with selected apartment number
+            setSelectedBox(selected.userData.apartmentNumber) // Update state with selected apartment number
             setPopupVisible(true); // Show pop-up window
             isPopupVisibleRef.current = true; // Set popup visibility ref to true
             selected.material.color.set(settings.building.block.selectColor); // Highlight the selected apartment in select color
@@ -252,11 +224,17 @@ function Skyscraper() {
       }
     }
 
-    function onTouchMove(event) {
-      if (isMouseDown && event.touches.length === 1) {
+    // Function to handle mouse up or touch end event
+    function onMouseUpOrTouchEnd() {
+      isMouseOrTouchDown = false;
+    }
+
+    // Function to handle mouse move event (for rotating and hover effects)
+    function onMouseMoveOrTouchMove(event) {
+      if (isMouseOrTouchDown && event.touches !== undefined && 
+        event.touches.length === 1 && !isPopupVisibleRef.current) {
         const deltaX = event.touches[0].clientX - mouseX;
         const deltaY = event.touches[0].clientY - mouseY;
-  
         // Update theta and phi based on touch movement
         thetaRef.current -= deltaX * settings.cameraControls.thetaSensitivity;
         phiRef.current = Math.max(
@@ -266,16 +244,45 @@ function Skyscraper() {
             phiRef.current - deltaY * settings.cameraControls.phiSensitivity
           )
         );
-  
         updateCameraPosition();
-  
         mouseX = event.touches[0].clientX;
         mouseY = event.touches[0].clientY;
+      } else {
+        if (!isPopupVisibleRef.current) {
+          if (isMouseOrTouchDown) {
+            const deltaX = event.clientX - mouseX;
+            const deltaY = event.clientY - mouseY;
+            // Update theta and phi based on mouse movement, invert directions to match expected behavior
+            thetaRef.current -= deltaX * settings.cameraControls.thetaSensitivity; // Inverted to match expected direction
+            phiRef.current = Math.max(
+              settings.cameraControls.phiClamp.min,
+              Math.min(
+                settings.cameraControls.phiClamp.max,
+                phiRef.current - deltaY * settings.cameraControls.phiSensitivity
+              )
+            ); // Inverted and clamped to match expected direction
+            updateCameraPosition();
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+          } else {
+            // Handle hover effect
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(building.children);
+            if (intersects.length > 0) {
+              const hovered = intersects[0].object;
+              resetPrevHoveredBoxColor();
+              hoveredBoxRef.current = hovered.userData.apartmentNumber;
+              if (hovered.userData.apartmentNumber !== selectedBoxRef.current) {
+                hovered.material.color.set(settings.building.block.highlightColor); // Highlight hovered apartment in green
+              }
+            } else {
+              resetPrevHoveredBoxColor();
+            }
+          }
+        }
       }
-    }
-
-    function onTouchEnd() {
-      isMouseDown = false;
     }
 
     // Function to handle window resize event
@@ -286,13 +293,13 @@ function Skyscraper() {
     }
 
     // Add event listeners for mouse and touch
-    window.addEventListener("mousedown", onMouseDown, false);
-    window.addEventListener("mousemove", onMouseMove, false);
-    window.addEventListener("mouseup", onMouseUp, false);
+    window.addEventListener("mousedown", onMouseDownOrTouchStart, false);
+    window.addEventListener("mousemove", onMouseMoveOrTouchMove, false);
+    window.addEventListener("mouseup", onMouseUpOrTouchEnd, false);
+    window.addEventListener("touchstart", onMouseDownOrTouchStart, false);
+    window.addEventListener("touchmove", onMouseMoveOrTouchMove, false);
+    window.addEventListener("touchend", onMouseUpOrTouchEnd, false);
     window.addEventListener("resize", onWindowResize, false);
-    window.addEventListener("touchstart", onTouchStart, false);
-    window.addEventListener("touchmove", onTouchMove, false);
-    window.addEventListener("touchend", onTouchEnd, false);
 
     // Render loop
     const animate = function () {
@@ -303,13 +310,13 @@ function Skyscraper() {
 
     return () => {
       // Cleanup on unmount
-      window.removeEventListener("mousedown", onMouseDown);
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("mousedown", onMouseDownOrTouchStart);
+      window.removeEventListener("mousemove", onMouseMoveOrTouchMove);
+      window.removeEventListener("mouseup", onMouseUpOrTouchEnd);
+      window.removeEventListener("touchstart", onMouseDownOrTouchStart);
+      window.removeEventListener("touchmove", onMouseMoveOrTouchMove);
+      window.removeEventListener("touchend", onMouseUpOrTouchEnd);
       window.removeEventListener("resize", onWindowResize);
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("touchend", onTouchEnd);
       mountRef.current.removeChild(renderer.domElement);
     };
   }, []); // Empty dependency array to avoid re-running the effect
@@ -318,7 +325,7 @@ function Skyscraper() {
     <div>
       <div ref={mountRef} style={{ position: "relative" }} />
       {isPopupVisible && (
-        <PopUp selectedBox={selectedBox} onClose={() => {
+        <PopUp selectedBox={selectedBox} onClose={(event, isTouchScreen) => {
           setPopupVisible(false); 
           isPopupVisibleRef.current = false;
         }} />
