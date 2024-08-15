@@ -165,7 +165,7 @@ function Skyscraper() {
 
     // Function to handle mouse down or touch start event
     function onMouseDownOrTouchStart(event) {
-      event.stopPropagation();
+      // event.stopPropagation();
       if (isTouchScreen && event.type == 'touchstart') {
         // For touchscreens
         if (!isPopupVisibleRef.current) {
@@ -216,9 +216,6 @@ function Skyscraper() {
             resetPrevSelectedBoxColor();
             selectedBoxRef.current = selected.userData.apartmentNumber; // Update ref with selected apartment number
             setSelectedBox(selected.userData.apartmentNumber) // Update state with selected apartment number
-            setPopupVisible(true); // Show pop-up window
-            isPopupVisibleRef.current = true; // Set popup visibility ref to true
-            selected.material.color.set(settings.building.block.selectColor); // Highlight the selected apartment in select color
           }
         }
       }
@@ -226,6 +223,11 @@ function Skyscraper() {
 
     // Function to handle mouse up or touch end event
     function onMouseUpOrTouchEnd() {
+      if (!isTouchScreen && selectedBoxRef.current !== null) {
+        setPopupVisible(true); // Show pop-up window
+        isPopupVisibleRef.current = true; // Set popup visibility ref to true
+        setSelectedBoxColor();
+      }
       isMouseOrTouchDown = false;
     }
 
@@ -233,6 +235,7 @@ function Skyscraper() {
     function onMouseMoveOrTouchMove(event) {
       if (isMouseOrTouchDown && event.touches !== undefined && 
         event.touches.length === 1 && !isPopupVisibleRef.current) {
+        // For touchpad
         const deltaX = event.touches[0].clientX - mouseX;
         const deltaY = event.touches[0].clientY - mouseY;
         // Update theta and phi based on touch movement
@@ -248,6 +251,7 @@ function Skyscraper() {
         mouseX = event.touches[0].clientX;
         mouseY = event.touches[0].clientY;
       } else {
+        // For mouse
         if (!isPopupVisibleRef.current) {
           if (isMouseOrTouchDown) {
             const deltaX = event.clientX - mouseX;
@@ -264,6 +268,14 @@ function Skyscraper() {
             updateCameraPosition();
             mouseX = event.clientX;
             mouseY = event.clientY;
+            if (hoveredBoxRef.current !== null) {
+              building.children.forEach((box) => {
+                box.material.color.set(settings.building.block.defaultColor);
+              });
+            }
+            hoveredBoxRef.current = null;
+            selectedBoxRef.current = null;
+            setSelectedBox(null);
           } else {
             // Handle hover effect
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
