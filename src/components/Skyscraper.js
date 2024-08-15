@@ -194,9 +194,13 @@ function Skyscraper() {
         }
       } else if (isTouchScreen && event.type == 'mousedown') {
         // Auto click after touch end on touchpad
-        setSelectedBoxColor();
-        setPopupVisible(true); 
-        isPopupVisibleRef.current = true;
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(building.children);
+        if (intersects.length > 0) {
+          setSelectedBoxColor();
+          setPopupVisible(true); 
+          isPopupVisibleRef.current = true;
+        }
       } else if (!isTouchScreen) {
         // For mouse
         if (!isPopupVisibleRef.current) {
