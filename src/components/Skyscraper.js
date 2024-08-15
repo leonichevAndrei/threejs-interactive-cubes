@@ -180,10 +180,10 @@ function Skyscraper() {
     
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(building.children);
-    
+
+            resetPrevSelectedBoxColor();
             if (intersects.length > 0) {
               const selected = intersects[0].object;
-              resetPrevSelectedBoxColor();
               selectedBoxRef.current = selected.userData.apartmentNumber; // Update ref with selected apartment number
               setSelectedBox(selected.userData.apartmentNumber); // Update state with selected apartment number
               // setPopupVisible(true); // Show pop-up window
@@ -214,10 +214,10 @@ function Skyscraper() {
     
           raycaster.setFromCamera(mouse, camera);
           const intersects = raycaster.intersectObjects(building.children);
-    
+
+          resetPrevSelectedBoxColor();
           if (intersects.length > 0) {
             const selected = intersects[0].object;
-            resetPrevSelectedBoxColor();
             selectedBoxRef.current = selected.userData.apartmentNumber; // Update ref with selected apartment number
             setSelectedBox(selected.userData.apartmentNumber) // Update state with selected apartment number
           }
@@ -228,9 +228,13 @@ function Skyscraper() {
     // Function to handle mouse up or touch end event
     function onMouseUpOrTouchEnd() {
       if (!isTouchScreen && selectedBoxRef.current !== null) {
-        setPopupVisible(true); // Show pop-up window
-        isPopupVisibleRef.current = true; // Set popup visibility ref to true
-        setSelectedBoxColor();
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(building.children);
+        if (intersects.length > 0) {
+          setPopupVisible(true); // Show pop-up window
+          isPopupVisibleRef.current = true; // Set popup visibility ref to true
+          setSelectedBoxColor();
+        }
       }
       isMouseOrTouchDown = false;
     }
