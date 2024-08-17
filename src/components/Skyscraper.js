@@ -165,7 +165,9 @@ function Skyscraper() {
 
     // Function to handle mouse down or touch start event
     function onMouseDownOrTouchStart(event) {
-      // event.stopPropagation();
+      if (event.type === 'touchstart' && event.touches.length > 1) {
+        return; // Ignore if more than one finger touches the screen
+      }
       if (isTouchScreen && event.type == 'touchstart') {
         // For touchscreens
         if (!isPopupVisibleRef.current) {
@@ -226,7 +228,10 @@ function Skyscraper() {
     }
 
     // Function to handle mouse up or touch end event
-    function onMouseUpOrTouchEnd() {
+    function onMouseUpOrTouchEnd(event) {
+      if (event.type === 'touchstart' && event.touches.length > 1) {
+        return; // Ignore if more than one finger touches the screen
+      }
       if (!isTouchScreen && selectedBoxRef.current !== null) {
         raycaster.setFromCamera(mouse, camera);
         const intersects = raycaster.intersectObjects(building.children);
@@ -241,6 +246,9 @@ function Skyscraper() {
 
     // Function to handle mouse move event (for rotating and hover effects)
     function onMouseMoveOrTouchMove(event) {
+      if (event.type === 'touchmove' && event.touches.length > 1) {
+        return; // Ignore if more than one finger is moving on the screen
+      }
       if (isMouseOrTouchDown && event.touches !== undefined && 
         event.touches.length === 1 && !isPopupVisibleRef.current) {
         // For touchpad
