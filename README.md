@@ -1,5 +1,7 @@
 # 🎲 React + Three.js — Interactive 3D Cubes (Skyscraper)
 
+🟢 **Live Demo:** [andrei-leonichev-three-js-demo.vercel.app](https://andrei-leonichev-three-js-demo.vercel.app/)
+
 An interactive 3D demo built with **React** and **Three.js**: a vertical stack of “apartments” (cubes) that you can rotate, hover, and select.  
 When you click a cube, a **popup** appears showing its apartment number.
 
