@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import PopUp from '../components/PopUp';
 import * as THREE from "three";
 import settings from '../settings/common-settings';
@@ -168,7 +168,7 @@ function Skyscraper() {
       if (event.type === 'touchstart' && event.touches.length > 1) {
         return; // Ignore if more than one finger touches the screen
       }
-      if (isTouchScreen && event.type == 'touchstart') {
+      if (isTouchScreen && event.type === 'touchstart') {
         // For touchscreens
         if (!isPopupVisibleRef.current) {
           if (event.touches.length === 1) { // One finger touch
@@ -194,7 +194,7 @@ function Skyscraper() {
             }
           }
         }
-      } else if (isTouchScreen && event.type == 'mousedown') {
+      } else if (isTouchScreen && event.type === 'mousedown') {
         // Auto click after touch end on touchpad
         raycaster.setFromCamera(mouse, camera);
         const intersects = raycaster.intersectObjects(building.children);
@@ -345,6 +345,7 @@ function Skyscraper() {
       window.removeEventListener("touchmove", onMouseMoveOrTouchMove);
       window.removeEventListener("touchend", onMouseUpOrTouchEnd);
       window.removeEventListener("resize", onWindowResize);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       mountRef.current.removeChild(renderer.domElement);
     };
   }, []); // Empty dependency array to avoid re-running the effect

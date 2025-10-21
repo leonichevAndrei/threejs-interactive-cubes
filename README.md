@@ -1,70 +1,154 @@
-# Getting Started with Create React App
+# 🎲 React + Three.js — Interactive 3D Cubes (Skyscraper)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+An interactive 3D demo built with **React** and **Three.js**: a vertical stack of “apartments” (cubes) that you can rotate, hover, and select.  
+When you click a cube, a **popup** appears showing its apartment number.
 
-## Available Scripts
+> Built as a small technical assignment / demo. Focused on camera control, raycasting, hover/selection states, and touch support.
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## ✨ Features
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- Interactive 3D building made of cubes  
+- Mouse and touch support (rotate / select)  
+- Hover highlight and click selection  
+- React-based popup overlay  
+- Configurable 3D scene and camera settings  
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## 🧱 Tech Stack
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **React** (Hooks, functional components)  
+- **Three.js** for 3D rendering  
+- **CSS / SCSS** for layout and popup styling  
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🚀 Getting Started
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+> Requires Node 18+
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```bash
+# Install dependencies
+npm install
 
-### `npm run eject`
+# Run the project
+npm start
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+If you’re using Vite:
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+npm run dev
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Then open http://localhost:3000 in your browser.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+---
 
-## Learn More
+## 📁 Project Structure
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```
+src/
+  components/
+    PopUp.jsx
+    Skyscraper.jsx
+  settings/
+    common-settings.js
+  styles/
+    app.css
+    pop-up.css
+  App.jsx
+  main.jsx (or index.jsx)
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+- `Skyscraper.jsx` — Three.js setup, camera, lighting, cube creation, hover and selection logic  
+- `PopUp.jsx` — Popup overlay displaying the selected apartment number  
+- `App.jsx` — Main entry point connecting components  
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 🎮 Controls
 
-### Analyzing the Bundle Size
+**Desktop:**  
+- Drag → rotate the building  
+- Hover → highlight cube  
+- Click → show popup  
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+**Touch devices:**  
+- Drag → rotate the building  
+- Tap → show popup  
 
-### Making a Progressive Web App
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## ⚙️ Configuration
 
-### Advanced Configuration
+All main parameters are stored in `settings/common-settings.js`:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```js
+export default {
+  camera: {
+    fov: 75,
+    aspect: window.innerWidth / window.innerHeight,
+    near: 0.1,
+    far: 1000,
+    position: { x: 0, y: 3, z: 10 },
+  },
+  lighting: {
+    ambient: {
+      color: 0xf0f0f0, // Soft white light
+    },
+    directional: {
+      color: 0xf0f0f0,
+      intensity: 1,
+      position: { x: 5, y: 10, z: 7.5 },
+    },
+  },
+  building: {
+    block: {
+      geometry: { width: 2, height: 0.5, depth: 2 },
+      spacing: { x: 1.1, y: 0.6, z: 1.1 },
+      defaultColor: 0xf0f0f0 , // Default grey color
+      highlightColor: 0x00ff00, // Green color for highlighting
+      selectColor: 0x00ffff, // Green color for highlighting
+    },
+    height: 10, // Number of floors
+  },
+  scene: {
+    backgroundColor: 0xf0f0f0, // Light grey background color
+  },
+  cameraControls: {
+    radius: 10, // Distance from the camera to the center of the building
+    initialTheta: 45,
+    initialPhi: Math.PI / 3,
+    thetaSensitivity: 0.01,
+    phiSensitivity: 0.005,
+    phiClamp: { min: 0.8, max: Math.PI - 1.4 },
+  },
+};
+```
 
-### Deployment
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 🧠 Implementation Notes
 
-### `npm run build` fails to minify
+- Uses **raycasting** to detect hovered and clicked cubes  
+- Camera rotates via **spherical coordinates** (`theta`, `phi`)  
+- State stored in both `useRef` (persistent state) and `useState` (popup visibility)  
+- Responsive — resizes with window events  
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---
+
+## 🧪 Potential Improvements
+
+- Add floor navigation or labels  
+- Add shadows or materials for realism  
+- Improve accessibility (keyboard rotation)  
+- Use performance optimizations for mobile  
+
+---
+
+## 📜 License
+
+MIT — free to use and modify.
